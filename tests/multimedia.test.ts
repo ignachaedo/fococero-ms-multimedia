@@ -1,4 +1,8 @@
-// ms-multimedia/tests/multimedia.test.ts
+/**
+ * Pruebas unitarias para el microservicio de Multimedia (ms-multimedia)
+ * 
+ * @module multimedia
+ */
 
 import request from 'supertest';
 import express from 'express';
@@ -75,7 +79,7 @@ afterAll(() => {
 // 🧪 SUITE DE PRUEBAS
 // ==========================================
 
-describe('🖼️ Multimedia Microservice Tests', () => {
+describe('🖼️ Pruebas del Microservicio Multimedia', () => {
     describe('POST /api/v1/multimedia/upload', () => {
         it('✅ Debería subir y procesar una imagen correctamente', async () => {
             const response = await request(app)
