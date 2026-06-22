@@ -1,4 +1,8 @@
-// ms-multimedia/src/controllers/multimedia.controller.ts
+/**
+ * @fileoverview Controlador de subida, vinculación y limpieza de archivos multimedia.
+ * Gestiona el ciclo de vida completo de imágenes: subida huérfana, vinculación
+ * a reportes/alertas, eliminación lógica y limpieza de archivos huérfanos.
+ */
 
 import { Request, Response, NextFunction } from 'express';
 import { MultimediaService } from '../services/multimedia.service';
@@ -13,8 +17,15 @@ import { logger } from '../config/logger';
 
 export class MultimediaController {
     /**
-     * 1. SUBIR ARCHIVO (Nace Huérfano)
-     * POST /api/v1/multimedia/upload
+     * Sube un archivo multimedia (nace huérfano, sin vincular).
+     *
+     * @description Procesa la imagen con Sharp, la sube a Firebase Storage,
+     * y registra el metadato en la base de datos. El archivo nace sin vínculo
+     * a reporte o alerta (huérfano) hasta que se vincule posteriormente.
+     *
+     * @param req - Request con file (multipart) y body.contexto
+     * @param res - Response 201 con datos del archivo creado
+     * @param next - NextFunction para pasar errores
      */
     static async subirArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -55,8 +66,14 @@ export class MultimediaController {
     }
 
     /**
-     * 2. VINCULAR ARCHIVO (Adopción)
-     * PATCH /api/v1/multimedia/:id/vincular
+     * Vincula un archivo huérfano a una entidad (reporte o alerta).
+     *
+     * @description Endpoint llamado internamente por ms-reportes o ms-alertas
+     * para adoptar un archivo previamente subido y asociarlo a un reporte/alerta.
+     *
+     * @param req - Request con params.id del archivo a vincular
+     * @param res - Response 200 con datos del archivo vinculado
+     * @param next - NextFunction para pasar errores
      */
     static async vincularArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -72,8 +89,11 @@ export class MultimediaController {
     }
 
     /**
-     * 3. ELIMINAR ARCHIVO (Soft Delete)
-     * DELETE /api/v1/multimedia/:id
+     * Elimina lógicamente (soft delete) un archivo multimedia.
+     *
+     * @param req - Request con params.id del archivo a eliminar
+     * @param res - Response 200 con mensaje de confirmación
+     * @param next - NextFunction para pasar errores
      */
     static async eliminarArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -89,8 +109,15 @@ export class MultimediaController {
     }
 
     /**
-     * 4. LIMPIEZA INTERNA (Barrendero de Huérfanos)
-     * GET /api/v1/multimedia/internal/cleanup
+     * Limpia archivos huérfanos (no vinculados) después de 24 horas.
+     *
+     * @description Busca archivos huérfanos expirados, elimina el archivo físico
+     * de Firebase Storage y marca el registro como eliminado lógicamente.
+     * Endpoint interno llamado por un job programado.
+     *
+     * @param req - Request (no requiere parámetros adicionales)
+     * @param res - Response con resumen de la limpieza
+     * @param next - NextFunction para pasar errores
      */
     static async limpiarHuerfanos(req: Request, res: Response, next: NextFunction) {
         try {

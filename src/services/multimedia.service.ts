@@ -1,4 +1,8 @@
-// ms-multimedia/src/services/multimedia.service.ts
+/**
+ * @fileoverview Servicio de procesamiento y almacenamiento de imágenes.
+ * Utiliza Sharp para optimizar imágenes (redimensión, conversión a WebP)
+ * y las sube a Firebase Storage con cache público de 1 año.
+ */
 
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -8,11 +12,16 @@ import { logger } from '../config/logger';
 
 export class MultimediaService {
     /**
-     * Procesa una imagen en memoria (redimensión y conversión a WebP)
-     * y la sube a Firebase Storage.
-     * * @param fileBuffer El buffer de la imagen en RAM
-     * @param contexto Carpeta de destino (ej. 'reporte' o 'alerta')
-     * @returns La URL pública y definitiva de la imagen
+     * Procesa y sube una imagen a Firebase Storage.
+     *
+     * @description Redimensiona la imagen a máximo 1280px de ancho,
+     * la convierte a WebP con calidad 80, genera un nombre único UUID
+     * y la sube a la carpeta correspondiente según el contexto.
+     *
+     * @param fileBuffer - Buffer de la imagen en memoria RAM
+     * @param contexto - Carpeta de destino ('reporte' o 'alerta')
+     * @returns URL pública y definitiva de la imagen en Firebase Storage
+     * @throws Error - Si falla el procesamiento con Sharp o la subida a Firebase
      */
     static async procesarYSubirImagen(
         fileBuffer: Buffer,

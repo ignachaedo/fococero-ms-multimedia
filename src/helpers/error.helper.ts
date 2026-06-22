@@ -1,9 +1,13 @@
-// ms-multimedia/src/helpers/error.helper.ts
+/**
+ * @fileoverview Clase AppError para errores operativos de la API.
+ * Permite adjuntar un código de estado HTTP al error para que
+ * el errorHandler responda con el status code adecuado.
+ */
 
 /**
- * Clase personalizada para manejar errores operativos de la API.
- * Permite adjuntar un código de estado HTTP (ej. 404, 400) al error
- * para que el errorHandler sepa exactamente cómo responder.
+ * Error operativo personalizado con código de estado HTTP.
+ * Distingue errores operativos esperados (isOperational = true)
+ * de errores internos no controlados para logging selectivo.
  */
 export class AppError extends Error {
     public readonly statusCode: number;

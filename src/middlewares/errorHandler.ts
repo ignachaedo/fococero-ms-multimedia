@@ -1,4 +1,8 @@
-// ms-multimedia/src/middlewares/errorHandler.ts
+/**
+ * @fileoverview Manejador global de errores para ms-multimedia.
+ * Traduce errores operativos (AppError), errores de Multer (tamaño/cantidad de archivos)
+ * y errores internos no controlados a respuestas HTTP estandarizadas.
+ */
 
 import { Request, Response, NextFunction } from 'express';
 import { MulterError } from 'multer';
@@ -8,6 +12,16 @@ import { logger } from '../config/logger';
 import { AppError } from '../helpers/error.helper';
 import { errorResponse } from '../helpers/response.helper';
 
+/**
+ * Manejador global de errores para ms-multimedia.
+ * Maneja AppError (errores operativos), MulterError (subida de archivos),
+ * errores de formato no soportado y errores internos genéricos.
+ *
+ * @param err - Error lanzado en la aplicación
+ * @param req - Objeto de solicitud Express
+ * @param res - Objeto de respuesta Express
+ * @param _next - Función next de Express (no utilizada)
+ */
 export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
     logger.error('🔥 [Error Middleware]:', err.message);
 

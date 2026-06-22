@@ -1,4 +1,7 @@
-// ms-multimedia/src/validators/multimedia.validator.ts
+/**
+ * @fileoverview Esquemas Zod para validación de operaciones multimedia.
+ * Define validación para subida de archivos (contexto) y parámetros UUID.
+ */
 
 import { z } from 'zod';
 import { ContextoMultimedia } from '../models/archivo.model';
