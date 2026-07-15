@@ -1,14 +1,10 @@
-/**
- * @fileoverview Controlador de subida, vinculación y limpieza de archivos multimedia.
- * Gestiona el ciclo de vida completo de imágenes: subida huérfana, vinculación
- * a reportes/alertas, eliminación lógica y limpieza de archivos huérfanos.
- */
+// ms-multimedia/src/controllers/multimedia.controller.ts
 
 import { Request, Response, NextFunction } from 'express';
 import { MultimediaService } from '../services/multimedia.service';
 import { ArchivoRepository } from '../repositories/archivo.repository';
 import { ContextoMultimedia } from '../models/archivo.model';
-import { bucket } from '../config/firebase';
+import { StorageService } from '../services/storage.service';
 
 // Helpers importados
 import { successResponse } from '../helpers/response.helper';
@@ -17,15 +13,8 @@ import { logger } from '../config/logger';
 
 export class MultimediaController {
     /**
-     * Sube un archivo multimedia (nace huérfano, sin vincular).
-     *
-     * @description Procesa la imagen con Sharp, la sube a Firebase Storage,
-     * y registra el metadato en la base de datos. El archivo nace sin vínculo
-     * a reporte o alerta (huérfano) hasta que se vincule posteriormente.
-     *
-     * @param req - Request con file (multipart) y body.contexto
-     * @param res - Response 201 con datos del archivo creado
-     * @param next - NextFunction para pasar errores
+     * 1. SUBIR ARCHIVO (Nace Huérfano)
+     * POST /api/v1/multimedia/upload
      */
     static async subirArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -66,14 +55,8 @@ export class MultimediaController {
     }
 
     /**
-     * Vincula un archivo huérfano a una entidad (reporte o alerta).
-     *
-     * @description Endpoint llamado internamente por ms-reportes o ms-alertas
-     * para adoptar un archivo previamente subido y asociarlo a un reporte/alerta.
-     *
-     * @param req - Request con params.id del archivo a vincular
-     * @param res - Response 200 con datos del archivo vinculado
-     * @param next - NextFunction para pasar errores
+     * 2. VINCULAR ARCHIVO (Adopción)
+     * PATCH /api/v1/multimedia/:id/vincular
      */
     static async vincularArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -89,11 +72,8 @@ export class MultimediaController {
     }
 
     /**
-     * Elimina lógicamente (soft delete) un archivo multimedia.
-     *
-     * @param req - Request con params.id del archivo a eliminar
-     * @param res - Response 200 con mensaje de confirmación
-     * @param next - NextFunction para pasar errores
+     * 3. ELIMINAR ARCHIVO (Soft Delete)
+     * DELETE /api/v1/multimedia/:id
      */
     static async eliminarArchivo(req: Request, res: Response, next: NextFunction) {
         try {
@@ -109,15 +89,8 @@ export class MultimediaController {
     }
 
     /**
-     * Limpia archivos huérfanos (no vinculados) después de 24 horas.
-     *
-     * @description Busca archivos huérfanos expirados, elimina el archivo físico
-     * de Firebase Storage y marca el registro como eliminado lógicamente.
-     * Endpoint interno llamado por un job programado.
-     *
-     * @param req - Request (no requiere parámetros adicionales)
-     * @param res - Response con resumen de la limpieza
-     * @param next - NextFunction para pasar errores
+     * 4. LIMPIEZA INTERNA (Barrendero de Huérfanos)
+     * GET /api/v1/multimedia/internal/cleanup
      */
     static async limpiarHuerfanos(req: Request, res: Response, next: NextFunction) {
         try {
@@ -132,10 +105,9 @@ export class MultimediaController {
 
             for (const archivo of huerfanos) {
                 try {
-                    const urlParts = archivo.url_publica.split(`${bucket.name}/`);
-                    if (urlParts.length === 2) {
-                        const filePath = urlParts[1];
-                        await bucket.file(filePath).delete({ ignoreNotFound: true });
+                    const relativePath = StorageService.extraerRelativePath(archivo.url_publica);
+                    if (relativePath) {
+                        await StorageService.eliminar(relativePath);
                         borradosFisicos++;
                     }
                     await ArchivoRepository.eliminarLogico(archivo.id);
@@ -146,7 +118,7 @@ export class MultimediaController {
 
             return successResponse(res, 200, 'Proceso de limpieza finalizado.', {
                 huerfanos_encontrados: huerfanos.length,
-                eliminados_firebase: borradosFisicos,
+                eliminados_fisicos: borradosFisicos,
             });
         } catch (error) {
             next(error);

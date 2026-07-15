@@ -19,7 +19,7 @@ const envVarsSchema = z.object({
     GATEWAY_URL: z.string().url().default('http://localhost:3000'),
     FIREBASE_PROJECT_ID: z.string().default('test-project'),
     FIREBASE_CLIENT_EMAIL: z.string().email().default('test@test.com'),
-    FIREBASE_PRIVATE_KEY: z.string().default('test-key').transform(val => val.replace(/\\n/g, '\n').replace(/"/g, '').trim()),
+    FIREBASE_PRIVATE_KEY: z.string().default('test-key'),
     FIREBASE_STORAGE_BUCKET: z.string().default('test-bucket'),
     DB_USER: z.string().default('test'),
     DB_PASSWORD: z.string().default('test'),
@@ -28,6 +28,8 @@ const envVarsSchema = z.object({
     DB_PORT: z.string().transform(Number).default('5432'),
     DB_HOST_LOCAL: z.string().default('localhost'),
     DB_PORT_LOCAL: z.string().transform(Number).default('5433'),
+    PUBLIC_URL: z.string().default('http://localhost:3005'),
+    UPLOAD_DIR: z.string().default('./uploads'),
 });
 
 const mergedEnv = { ...testDefaults, ...process.env };

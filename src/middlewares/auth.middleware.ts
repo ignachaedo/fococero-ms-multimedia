@@ -1,10 +1,3 @@
-/**
- * @fileoverview Middleware de autenticación para ms-multimedia.
- * Soporta dos modos: verificación directa de token Firebase Bearer,
- * o confianza en headers del API Gateway (x-user-id) como fallback
- * para desarrollo o tráfico interno.
- */
-
 import { Request, Response, NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 
@@ -21,14 +14,13 @@ declare global {
 }
 
 /**
- * Middleware de autenticación para el gateway de multimedia.
- *
- * @description Intenta primero verificar el token Firebase del header Authorization.
- * Como fallback, confía en los headers x-user-id y x-user-role del API Gateway.
- *
- * @param req - Objeto Request de Express
- * @param res - Objeto Response de Express
- * @param next - Función NextFunction de Express
+ * Extrae y verifica el token Bearer del header Authorization usando Firebase Admin.
+ * 
+ * Flujo de seguridad:
+ * 1. Verifica que exista el header Authorization con formato "Bearer <token>"
+ * 2. Verifica el token con Firebase Admin (valida firma, expiración, emisor, audiencia)
+ * 3. Extrae el UID del token decodificado y lo asigna a req.user.id
+ * 4. Mantiene compatibilidad con x-user-role para roles transferidos desde el Gateway
  */
 export const requireGatewayAuth = async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -1,15 +1,11 @@
-/**
- * @fileoverview Middleware validador basado en Zod para ms-multimedia.
- */
+// ms-multimedia/src/middlewares/validate.middleware.ts
 
 import { Request, Response, NextFunction } from 'express';
 import { AnyZodObject, ZodError } from 'zod';
 
 /**
- * Middleware genérico para validar peticiones usando esquemas Zod.
- *
- * @param schema - Esquema Zod que define la estructura esperada
- * @returns Middleware function de Express
+ * Middleware genérico para validar cualquier petición usando esquemas de Zod.
+ * Atrapa datos faltantes o incorrectos antes de que lleguen al Controlador.
  */
 export const validateSchema =
     (schema: AnyZodObject) => async (req: Request, res: Response, next: NextFunction) => {

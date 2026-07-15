@@ -1,20 +1,13 @@
-/**
- * @fileoverview Repositorio de archivos multimedia (imágenes, videos, documentos).
- * Maneja operaciones CRUD con soft delete, control de archivos huérfanos
- * y vinculación a entidades (reportes/alertas).
- */
+// ms-multimedia/src/repositories/archivo.repository.ts
 
 import { QueryConfig } from 'pg';
 import { pool } from '../config/db';
+// ✅ FIX: Se eliminó IUpdateArchivoDTO de la importación
 import { IArchivoMultimedia, ICreateArchivoDTO } from '../models/archivo.model';
 
 export class ArchivoRepository {
     /**
-     * Registra un nuevo archivo en la base de datos.
-     * Nace con estado huérfano (es_huerfano = true) hasta que se vincule a una entidad.
-     *
-     * @param data - DTO con url_publica, formato, peso_bytes, contexto y metadata
-     * @returns El archivo creado
+     * Registra un nuevo archivo en la base de datos (Nace como huérfano por defecto).
      */
     static async crear(data: ICreateArchivoDTO): Promise<IArchivoMultimedia> {
         const query: QueryConfig = {
@@ -40,10 +33,7 @@ export class ArchivoRepository {
     }
 
     /**
-     * Busca un archivo por su ID (excluye eliminaciones lógicas).
-     *
-     * @param id - UUID del archivo
-     * @returns El archivo encontrado o null si no existe o fue eliminado
+     * Busca un archivo por su ID único. Ignora los que han sido eliminados (Soft Delete).
      */
     static async obtenerPorId(id: string): Promise<IArchivoMultimedia | null> {
         const query: QueryConfig = {
@@ -57,10 +47,7 @@ export class ArchivoRepository {
     }
 
     /**
-     * Marca un archivo como no huérfano, confirmando su vinculación a una entidad (reporte/alerta).
-     *
-     * @param id - UUID del archivo a vincular
-     * @returns El archivo actualizado o null si no existe o fue eliminado
+     * Quita el estado 'huérfano' de un archivo, confirmando que fue vinculado a un reporte/alerta.
      */
     static async vincularEntidad(id: string): Promise<IArchivoMultimedia | null> {
         const query: QueryConfig = {
@@ -79,11 +66,8 @@ export class ArchivoRepository {
     }
 
     /**
-     * Busca archivos huérfanos que lleven más de X horas sin ser reclamados (para cronjob de limpieza).
-     * Optimizado con índice parcial 'idx_archivos_huerfanos_limpieza'.
-     *
-     * @param horasExpiracion - Horas mínimas sin ser reclamado para considerarse expirado
-     * @returns Array de archivos huérfanos expirados
+     * 🚀 OPTIMIZADO PARA CRONJOBS: Utiliza el índice parcial 'idx_archivos_huerfanos_limpieza'.
+     * Busca archivos huérfanos que lleven más de X horas sin ser reclamados.
      */
     static async obtenerHuerfanosExpirados(horasExpiracion: number): Promise<IArchivoMultimedia[]> {
         const query: QueryConfig = {
@@ -102,10 +86,7 @@ export class ArchivoRepository {
     }
 
     /**
-     * Realiza soft delete marcando la fecha de borrado (no elimina la fila).
-     *
-     * @param id - UUID del archivo a eliminar lógicamente
-     * @returns true si se marcó como eliminado, false si no existía o ya estaba eliminado
+     * Realiza un Soft-Delete del registro (No borra la fila, solo marca la fecha de borrado).
      */
     static async eliminarLogico(id: string): Promise<boolean> {
         const query: QueryConfig = {

@@ -9,7 +9,7 @@ import swaggerUi from 'swagger-ui-express';
 // CONFIGURACIONES E INICIALIZACIONES
 // ==========================================
 import { envs } from './config/envs';
-import './config/db'; 
+import { pool, waitForDatabase, isDatabaseHealthy } from './config/db';
 import './config/firebase'; 
 import { eurekaClient, initEureka } from './config/eureka';
 
@@ -21,7 +21,6 @@ import { swaggerSpec } from './docs/swagger';
 import { iniciarBarrendero } from './cron/barrendero';
 import { errorHandler } from './middlewares/errorHandler';
 import { metricsMiddleware, metricsHandler } from './middlewares/metrics.middleware';
-import { internalAuthMiddleware } from './middlewares/internalAuth.middleware';
 import { logger } from './config/logger';
 
 const app: Application = express();
@@ -57,20 +56,25 @@ app.use(
     }),
 );
 
+// 3.5 SERVIDOR DE ARCHIVOS ESTÁTICOS (uploads)
+import path from 'path';
+app.use('/uploads', express.static(path.resolve(envs.UPLOAD_DIR)));
+
 // 4. RUTAS PRINCIPALES
-app.get('/health', (_req, res) => {
-    res.status(200).json({
-        status: 'OK',
+app.get('/health', async (_req, res) => {
+    const dbHealthy = await isDatabaseHealthy();
+    const status = dbHealthy ? 'OK' : 'DEGRADED';
+    const statusCode = dbHealthy ? 200 : 503;
+    res.status(statusCode).json({
+        status,
         service: 'ms-multimedia',
+        database: dbHealthy ? 'connected' : 'disconnected',
         timestamp: new Date().toISOString(),
     });
 });
 
 // 📊 Endpoint de métricas Prometheus
 app.get('/metrics', metricsHandler);
-
-// 🔐 Seguridad interna para el resto de las rutas
-app.use(internalAuthMiddleware);
 
 app.use('/api/v1/multimedia', multimediaRoutes);
 
@@ -85,6 +89,8 @@ async function bootstrap() {
         logger.info(`====================================================`);
         logger.info(`🎥 INICIANDO MS-MULTIMEDIA (FocoCero Process)`);
         logger.info(`====================================================`);
+
+        await waitForDatabase();
 
         const server = app.listen(envs.PORT, () => {
             logger.info(`🚀 [SERVER] Escuchando en puerto: ${envs.PORT}`);
@@ -114,8 +120,9 @@ async function bootstrap() {
                 server.close(() => {
                     logger.info("✅ [SERVER] Servidor HTTP detenido.");
                     
-                    // Nota: Si en el futuro exportas el pool de ./config/db, ciérralo aquí.
-                    
+                    pool.end().catch(() => {});
+                    logger.info("✅ [DB] Pool de PostgreSQL cerrado.");
+
                     logger.info("👋 [SISTEMA] Apagado completado de forma segura.");
                     process.exit(0);
                 });
