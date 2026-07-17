@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-multimedia
+  namespace: fococero
+spec:
+  selector:
+    app: ms-multimedia
+  ports:
+    - protocol: TCP
+      port: 3005
+      targetPort: 3005
+  type: ClusterIP

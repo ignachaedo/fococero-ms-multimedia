@@ -1,39 +1,28 @@
-name: CI - MS Multimedia
-
-# 1. ¿Cuándo se ejecuta este pipeline?
+name: CI - ms-multimedia
 on:
   push:
     branches: ["main", "develop"]
-    # Solo se ejecuta si hay cambios DENTRO de la carpeta ms-multimedia
   pull_request:
     branches: ["main", "develop"]
 
-# 2. ¿Qué trabajos (jobs) va a realizar?
 jobs:
-  test-and-build:
-    name: Test and Build
+  construir-y-verificar:
+    name: Construir y Verificar
     runs-on: ubuntu-latest
-
-    # Establecemos el directorio de trabajo por defecto para todos los pasos
-
     steps:
-      # Paso 1: Clonar el repositorio en la máquina virtual de GitHub
-      - name: 📥 Checkout del código
+      - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      # Paso 2: Instalar Node.js (usando la versión 22)
-      - name: ⚙️ Setup Node.js 22
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "npm"
 
-      # Paso 3: Instalar dependencias exactas (Clean Install)
-      - name: 📦 Instalar Dependencias
+      - name: Instalar dependencias
         run: npm ci
 
-      # Paso 4: Ejecutar la suite de pruebas (Jest & Supertest) con cobertura
-      - name: 🧪 Ejecutar Tests
+      - name: Ejecutar pruebas con cobertura
         run: npm test -- --coverage
         env:
           NODE_ENV: test
@@ -51,20 +40,5 @@ jobs:
           EUREKA_HOST: localhost
           INTERNAL_SECRET_TOKEN: ${{ secrets.INTERNAL_SECRET_TOKEN || 'test-token' }}
 
-      # Paso 5: Compilar el código TypeScript a JavaScript
-      - name: 🏗️ Compilar TypeScript (Build)
+      - name: Compilar proyecto
         run: npm run build
-
-      # TODO: Descomentar cuando se configuren los secrets de Docker (DOCKER_USERNAME, DOCKER_PASSWORD)
-      # - name: 🔐 Login a Docker Hub
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
-      #
-      # - name: 🐳 Build y Push de imagen Docker
-      #   uses: docker/build-push-action@v5
-      #   with:
-      #     context: ./ms-multimedia
-      #     push: true
-      #     tags: fococero/ms-multimedia:latest
